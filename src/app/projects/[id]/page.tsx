@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, getToken } from "@/lib/api-client";
+import { apiFetch, getToken, getStoredUser } from "@/lib/api-client";
 import { Header } from "@/components/Header";
 import { StatusColumn } from "@/components/StatusColumn";
 import { TaskDetail } from "@/components/TaskDetail";
@@ -57,6 +57,12 @@ export default function ProjectPage({ params }: PageProps) {
       tasksByStatus[t.status].push(t);
     }
   }
+
+  const storedUser = getStoredUser();
+  const currentRole = project?.memberships.find(
+    (m) => m.user.id === storedUser?.id,
+  )?.role;
+  const canPostComment = currentRole === "admin" || currentRole === "member";
 
   return (
     <div className="min-h-screen">
@@ -173,6 +179,7 @@ export default function ProjectPage({ params }: PageProps) {
           task={activeTask}
           projectId={id}
           members={project.memberships}
+          canPostComment={canPostComment}
           onClose={() => setActiveTask(null)}
         />
       )}
