@@ -22,6 +22,7 @@ export default function ProjectPage({ params }: PageProps) {
   const [newTitle, setNewTitle] = useState("");
   const [newColumn, setNewColumn] = useState<TaskStatus>("todo");
   const [error, setError] = useState<string | null>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getToken()) router.replace("/login");
@@ -63,6 +64,29 @@ export default function ProjectPage({ params }: PageProps) {
     (m) => m.user.id === storedUser?.id,
   )?.role;
   const canPostComment = currentRole === "admin" || currentRole === "member";
+  const canExport = canPostComment;
+
+  const exportToAirtable = useMutation({
+    mutationFn: () =>
+      apiFetch<{ exported: number; failed: number; errors: { taskId: string; message: string }[] }>(
+        `/api/projects/${id}/export`,
+        { method: "POST" },
+      ),
+    onSuccess: (data) => {
+      setError(null);
+      if (data.failed > 0) {
+        setExportMessage(
+          `Exported ${data.exported} tasks to Airtable (${data.failed} failed)`,
+        );
+      } else {
+        setExportMessage(`Exported ${data.exported} tasks to Airtable`);
+      }
+    },
+    onError: (err) => {
+      setExportMessage(null);
+      setError(err instanceof Error ? err.message : "export failed");
+    },
+  });
 
   return (
     <div className="min-h-screen">
@@ -97,7 +121,27 @@ export default function ProjectPage({ params }: PageProps) {
                   owner: {project.owner.name} · {project.memberships.length} members
                 </p>
               </div>
+              {canExport && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMessage(null);
+                    setError(null);
+                    exportToAirtable.mutate();
+                  }}
+                  disabled={exportToAirtable.isPending}
+                  className="text-sm px-4 py-2 rounded-md border border-border hover:border-accent disabled:opacity-50 shrink-0"
+                >
+                  {exportToAirtable.isPending ? "exporting…" : "export to airtable"}
+                </button>
+              )}
             </div>
+
+            {exportMessage && (
+              <p className="text-sm text-green-400 mb-4" role="status">
+                {exportMessage}
+              </p>
+            )}
 
             <section className="bg-surface border border-border rounded-lg p-4 mb-6">
               <h2 className="text-sm font-medium mb-3">add a task</h2>
