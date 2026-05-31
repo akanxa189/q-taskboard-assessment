@@ -1,3 +1,6 @@
+## Submission Recording
+Loom: https://www.loom.com/share/203ca241fc5045b887d447665cbef739
+
 # TaskBoard — Project Management App
 
 A Next.js 15 fullstack application for managing projects, tasks, and team members. TypeScript + Prisma + PostgreSQL on the server, React 19 + TanStack Query on the client.
